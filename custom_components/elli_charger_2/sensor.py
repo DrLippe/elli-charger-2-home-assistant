@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfElectricCurrent, UnitOfTemperature
+from homeassistant.const import (\n    UnitOfElectricCurrent,\n    UnitOfEnergy,\n    UnitOfTemperature,\n    UnitOfTime,\n)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -41,7 +41,12 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
         key="last_session_energy",
         translation_key="last_session_energy",
-        value_fn=lambda d: _nested(d, "last_session", "energyConsumption"),
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=3,
+        value_fn=lambda d: _wh_to_kwh(
+            _nested(d, "last_session", "energyConsumption")
+        ),
     ),
     ElliSensorDescription(
         key="last_session_charging_rate",
@@ -51,11 +56,18 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
         key="lifetime_energy",
         translation_key="lifetime_energy",
-        value_fn=lambda d: _nested(d, "lifetime_stats", "totalEnergy"),
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        suggested_display_precision=3,
+        value_fn=lambda d: _wh_to_kwh(
+            _nested(d, "lifetime_stats", "totalEnergy")
+        ),
     ),
     ElliSensorDescription(
         key="lifetime_charging_time",
         translation_key="lifetime_charging_time",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
         value_fn=lambda d: _nested(d, "lifetime_stats", "totalChargingTime"),
     ),
     ElliSensorDescription(
@@ -149,4 +161,13 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
         if self.entity_description.key == "relay_state":
             relay = self.coordinator.data.get("relay_state")
             return relay if isinstance(relay, dict) else None
+        if self.entity_description.key == "lifetime_charging_time":
+            seconds = _nested(
+                self.coordinator.data, "lifetime_stats", "totalChargingTime"
+            )
+            formatted = _format_duration(seconds)
+            return {
+                "raw_seconds": seconds,
+                "formatted_duration": formatted,
+            }
         return None
