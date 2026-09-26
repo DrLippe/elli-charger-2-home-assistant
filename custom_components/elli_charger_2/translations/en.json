@@ -27,5 +27,36 @@
         "service": "Service user"
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "last_charging_session": {
+        "name": "Last charging session",
+        "state": {
+          "available": "Available",
+          "none": "None"
+        }
+      },
+      "charging_state": {
+        "name": "Charging state"
+      },
+      "rfid_card": {
+        "name": "RFID card"
+      },
+      "last_session_charging_rate": {
+        "name": "Charging power"
+      },
+      "last_session_energy": {
+        "name": "Charging energy"
+      },
+      "last_charging_start": {
+        "name": "Last charging start"
+      }
+    },
+    "binary_sensor": {
+      "vehicle_connected": {
+        "name": "Vehicle connected"
+      }
+    }
   }
 }
