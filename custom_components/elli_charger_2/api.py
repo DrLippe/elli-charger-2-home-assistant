@@ -166,13 +166,29 @@ class ElliChargerApi:
             "device_temperatures": ("/api/v2/system/device-temperatures", True),
         }
 
-        async def fetch(path: str, auth: bool) -> Any:
-            return await self._request("GET", path, auth=auth)
+        # The unauthenticated charging state is our connectivity baseline.
+        # Additional authenticated endpoints may be unavailable for the standard
+        # account or on hardware variants, so they must not take down the whole
+        # integration.
+        charging_state = await self._request(
+            "GET", "/api/v2/charging/state", auth=False
+        )
+
+        async def fetch_optional(key: str, path: str, auth: bool) -> tuple[str, Any]:
+            if key == "charging_state":
+                return key, charging_state
+            try:
+                return key, await self._request("GET", path, auth=auth)
+            except ElliChargerError:
+                return key, None
 
         values = await asyncio.gather(
-            *(fetch(path, auth) for path, auth in endpoints.values())
+            *(
+                fetch_optional(key, path, auth)
+                for key, (path, auth) in endpoints.items()
+            )
         )
-        return dict(zip(endpoints, values, strict=True))
+        return dict(values)
 
     async def async_get_static_data(self) -> dict[str, Any]:
         """Fetch mostly static capability and setup information."""
