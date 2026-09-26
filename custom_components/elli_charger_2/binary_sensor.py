@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -37,27 +38,32 @@ BINARY_SENSORS: tuple[ElliBinarySensorDescription, ...] = (
     ElliBinarySensorDescription(
         key="vehicle_connected",
         translation_key="vehicle_connected",
+        device_class=BinarySensorDeviceClass.PLUG,
         icon="mdi:ev-plug-type2",
         value_fn=lambda d: d.get("plugged_vehicle") is not None,
     ),
     ElliBinarySensorDescription(
         key="ethernet_connected",
         translation_key="ethernet_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
         value_fn=lambda d: _bool_field(d, "ethernet_connected", "connected"),
     ),
     ElliBinarySensorDescription(
         key="network_connected",
         translation_key="network_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
         value_fn=lambda d: _bool_field(d, "network_connected", "connected"),
     ),
     ElliBinarySensorDescription(
         key="wlan_connected",
         translation_key="wlan_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
         value_fn=lambda d: _bool_field(d, "wlan_connected", "connected"),
     ),
     ElliBinarySensorDescription(
         key="lte_connected",
         translation_key="lte_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
         value_fn=lambda d: _bool_field(d, "lte_connected", "connected"),
     ),
     ElliBinarySensorDescription(
@@ -68,6 +74,7 @@ BINARY_SENSORS: tuple[ElliBinarySensorDescription, ...] = (
     ElliBinarySensorDescription(
         key="ocpp_connected",
         translation_key="ocpp_connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
         value_fn=lambda d: _bool_field(d, "ocpp_connected", "connected"),
     ),
     ElliBinarySensorDescription(
