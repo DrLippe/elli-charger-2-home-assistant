@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Callable
 
 from homeassistant.components.sensor import (
@@ -14,11 +15,13 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     UnitOfElectricCurrent,
     UnitOfEnergy,
+    UnitOfPower,
     UnitOfTemperature,
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .entity import ElliChargerEntity
 
@@ -43,6 +46,13 @@ def _wh_to_kwh(value: Any) -> float | None:
     return round(value / 1000, 3)
 
 
+def _parse_datetime(value: Any) -> datetime | None:
+    """Parse an ISO timestamp returned by the charger."""
+    if not isinstance(value, str) or not value:
+        return None
+    return dt_util.parse_datetime(value)
+
+
 def _format_duration(seconds: Any) -> str | None:
     """Format seconds as days, hours, minutes and seconds."""
     if not isinstance(seconds, (int, float)) or seconds < 0:
@@ -65,17 +75,64 @@ def _format_duration(seconds: Any) -> str | None:
     return " ".join(parts)
 
 
+def _last_session_state(data: dict[str, Any]) -> str:
+    """Return whether a last charging session is available."""
+    return "available" if isinstance(data.get("last_session"), dict) else "none"
+
+
+def _rfid_card(data: dict[str, Any]) -> str | None:
+    """Return an RFID/card identifier when the API exposes one."""
+    session = data.get("last_session")
+    if not isinstance(session, dict):
+        return None
+
+    for key in (
+        "rfidCard",
+        "rfid",
+        "rfidTag",
+        "cardId",
+        "tagId",
+        "authorizationId",
+        "idTag",
+    ):
+        value = session.get(key)
+        if value not in (None, ""):
+            return str(value)
+
+    cause = session.get("authorizationCause")
+    if isinstance(cause, str) and "rfid" in cause.lower():
+        return "RFID"
+    return None
+
+
 SENSORS: tuple[ElliSensorDescription, ...] = (
+    ElliSensorDescription(
+        key="last_charging_session",
+        translation_key="last_charging_session",
+        device_class=SensorDeviceClass.ENUM,
+        options=["available", "none"],
+        icon="mdi:ev-plug-type2",
+        value_fn=_last_session_state,
+    ),
     ElliSensorDescription(
         key="charging_state",
         translation_key="charging_state",
+        icon="mdi:ev-station",
         value_fn=lambda d: _nested(d, "charging_state", "value"),
     ),
     ElliSensorDescription(
-        key="max_current",
-        translation_key="max_current",
-        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-        value_fn=lambda d: _nested(d, "charging_limits", "maxCurrent"),
+        key="rfid_card",
+        translation_key="rfid_card",
+        icon="mdi:card-account-details-outline",
+        value_fn=_rfid_card,
+    ),
+    ElliSensorDescription(
+        key="last_session_charging_rate",
+        translation_key="last_session_charging_rate",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        icon="mdi:flash",
+        value_fn=lambda d: _nested(d, "last_session", "chargingRate"),
     ),
     ElliSensorDescription(
         key="last_session_energy",
@@ -83,14 +140,25 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=3,
+        icon="mdi:battery-charging",
         value_fn=lambda d: _wh_to_kwh(
             _nested(d, "last_session", "energyConsumption")
         ),
     ),
     ElliSensorDescription(
-        key="last_session_charging_rate",
-        translation_key="last_session_charging_rate",
-        value_fn=lambda d: _nested(d, "last_session", "chargingRate"),
+        key="last_charging_start",
+        translation_key="last_charging_start",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:clock-start",
+        value_fn=lambda d: _parse_datetime(
+            _nested(d, "last_session", "startDateTime")
+        ),
+    ),
+    ElliSensorDescription(
+        key="max_current",
+        translation_key="max_current",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        value_fn=lambda d: _nested(d, "charging_limits", "maxCurrent"),
     ),
     ElliSensorDescription(
         key="lifetime_energy",
@@ -202,6 +270,14 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return useful diagnostic attributes."""
+        if self.entity_description.key == "last_charging_session":
+            session = self.coordinator.data.get("last_session")
+            return session if isinstance(session, dict) else None
+        if self.entity_description.key == "rfid_card":
+            session = self.coordinator.data.get("last_session")
+            if isinstance(session, dict):
+                return {"authorization_cause": session.get("authorizationCause")}
+            return None
         if self.entity_description.key == "active_errors":
             return {"errors": self.coordinator.data.get("errors") or []}
         if self.entity_description.key == "relay_state":
