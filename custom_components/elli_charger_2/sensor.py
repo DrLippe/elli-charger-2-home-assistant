@@ -10,6 +10,7 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -131,6 +132,7 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         translation_key="last_session_charging_rate",
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:flash",
         value_fn=lambda d: _nested(d, "last_session", "chargingRate"),
     ),
@@ -140,6 +142,7 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=3,
+        state_class=SensorStateClass.TOTAL,
         icon="mdi:battery-charging",
         value_fn=lambda d: _wh_to_kwh(
             _nested(d, "last_session", "energyConsumption")
@@ -157,7 +160,9 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
         key="max_current",
         translation_key="max_current",
+        device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(d, "charging_limits", "maxCurrent"),
     ),
     ElliSensorDescription(
@@ -166,6 +171,7 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=3,
+        state_class=SensorStateClass.TOTAL,
         value_fn=lambda d: _wh_to_kwh(
             _nested(d, "lifetime_stats", "totalEnergy")
         ),
@@ -175,12 +181,15 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         translation_key="lifetime_charging_time",
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.TOTAL,
         value_fn=lambda d: _nested(d, "lifetime_stats", "totalChargingTime"),
     ),
     ElliSensorDescription(
         key="communication_controller_temperature",
         translation_key="communication_controller_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(
             d, "device_temperatures", "communicationControllerTemperature"
         ),
@@ -188,25 +197,33 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
         key="emmc_temperature",
         translation_key="emmc_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(d, "device_temperatures", "eMmcTemperature"),
     ),
     ElliSensorDescription(
         key="input_path_temperature",
         translation_key="input_path_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(d, "device_temperatures", "inputPathTemperature"),
     ),
     ElliSensorDescription(
         key="output_path_temperature",
         translation_key="output_path_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(d, "device_temperatures", "outputPathTemperature"),
     ),
     ElliSensorDescription(
         key="power_controller_temperature",
         translation_key="power_controller_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(
             d, "device_temperatures", "powerControllerTemperature"
         ),
@@ -214,7 +231,9 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
         key="relay_temperature",
         translation_key="relay_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: _nested(d, "device_temperatures", "relayTemperature"),
     ),
     ElliSensorDescription(
