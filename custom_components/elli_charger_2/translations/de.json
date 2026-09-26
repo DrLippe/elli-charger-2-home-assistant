@@ -1,0 +1,62 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Elli Charger 2",
+        "description": "Verbindung mit der lokalen REST-API des Elli Charger 2 Connect herstellen.",
+        "data": {
+          "host": "IP-Adresse oder mDNS-Hostname",
+          "user_type": "Benutzertyp",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur Wallbox fehlgeschlagen.",
+      "invalid_auth": "Benutzername oder Passwort ungültig.",
+      "invalid_host": "IP-Adresse oder Hostname ungültig."
+    },
+    "abort": {
+      "already_configured": "Diese Wallbox ist bereits eingerichtet."
+    }
+  },
+  "selector": {
+    "user_type": {
+      "options": {
+        "standard": "Standardbenutzer",
+        "service": "Servicebenutzer"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "charging_state": {"name": "Ladezustand"},
+      "max_current": {"name": "Maximalstrom"},
+      "last_session_energy": {"name": "Energie letzte Ladesitzung"},
+      "last_session_charging_rate": {"name": "Laderate letzte Ladesitzung"},
+      "lifetime_energy": {"name": "Gesamtenergie"},
+      "lifetime_charging_time": {"name": "Gesamtladezeit"},
+      "communication_controller_temperature": {"name": "Temperatur Kommunikationscontroller"},
+      "emmc_temperature": {"name": "eMMC-Temperatur"},
+      "input_path_temperature": {"name": "Temperatur Eingangspfad"},
+      "output_path_temperature": {"name": "Temperatur Ausgangspfad"},
+      "power_controller_temperature": {"name": "Temperatur Leistungscontroller"},
+      "relay_temperature": {"name": "Relais-Temperatur"},
+      "relay_state": {"name": "Relaiszustand"},
+      "active_errors": {"name": "Aktive Fehler"}
+    },
+    "binary_sensor": {
+      "ethernet_connected": {"name": "Ethernet verbunden"},
+      "network_connected": {"name": "Netzwerk verbunden"},
+      "wlan_connected": {"name": "WLAN verbunden"},
+      "lte_connected": {"name": "LTE verbunden"},
+      "ocpp_enabled": {"name": "OCPP aktiviert"},
+      "ocpp_connected": {"name": "OCPP verbunden"},
+      "relay_enabled": {"name": "Phasenumschaltung aktiviert"},
+      "free_charging": {"name": "Freies Laden"},
+      "ground_monitoring_available": {"name": "Erdungsüberwachung verfügbar"},
+      "calibration_law_available": {"name": "Eichrecht verfügbar"},
+      "energy_saving_available": {"name": "Energiesparen verfügbar"}
+    }
+  }
+}
