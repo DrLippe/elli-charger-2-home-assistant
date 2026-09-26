@@ -35,6 +35,12 @@ def _bool_field(data: dict[str, Any], group: str, key: str) -> bool | None:
 
 BINARY_SENSORS: tuple[ElliBinarySensorDescription, ...] = (
     ElliBinarySensorDescription(
+        key="vehicle_connected",
+        translation_key="vehicle_connected",
+        icon="mdi:ev-plug-type2",
+        value_fn=lambda d: d.get("plugged_vehicle") is not None,
+    ),
+    ElliBinarySensorDescription(
         key="ethernet_connected",
         translation_key="ethernet_connected",
         value_fn=lambda d: _bool_field(d, "ethernet_connected", "connected"),
@@ -110,7 +116,12 @@ class ElliBinarySensor(ElliChargerEntity, BinarySensorEntity):
 
     entity_description: ElliBinarySensorDescription
 
-    def __init__(self, coordinator, entry_id: str, description: ElliBinarySensorDescription) -> None:
+    def __init__(
+        self,
+        coordinator,
+        entry_id: str,
+        description: ElliBinarySensorDescription,
+    ) -> None:
         super().__init__(coordinator, entry_id)
         self.entity_description = description
         self._attr_unique_id = f"{entry_id}_{description.key}"
