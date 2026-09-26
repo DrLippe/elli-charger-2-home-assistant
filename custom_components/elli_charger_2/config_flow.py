@@ -15,6 +15,9 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 
 from .api import (
@@ -70,24 +73,22 @@ class ElliChargerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_HOST): str,
+                vol.Required(CONF_HOST): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
                 vol.Required(CONF_USER_TYPE, default=USER_TYPE_STANDARD): SelectSelector(
                     SelectSelectorConfig(
                         options=[
-                            SelectOptionDict(
-                                value=USER_TYPE_STANDARD,
-                                label="Standard user",
-                            ),
-                            SelectOptionDict(
-                                value=USER_TYPE_SERVICE,
-                                label="Service user",
-                            ),
+                            SelectOptionDict(value=USER_TYPE_STANDARD, label="Standard user"),
+                            SelectOptionDict(value=USER_TYPE_SERVICE, label="Service user"),
                         ],
                         mode=SelectSelectorMode.DROPDOWN,
                         translation_key="user_type",
                     )
                 ),
-                vol.Required(CONF_PASSWORD): str,
+                vol.Required(CONF_PASSWORD): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
