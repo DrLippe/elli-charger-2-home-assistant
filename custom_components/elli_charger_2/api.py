@@ -69,7 +69,7 @@ class ElliChargerApi:
         try:
             async with self._session.post(
                 f"{self._base_url}/api/v2/jwt/login",
-                json={"user": self.api_user, "pass": self._password},
+                data={"user": self.api_user, "pass": self._password},
                 ssl=False,
                 timeout=ClientTimeout(total=10),
             ) as response:
