@@ -30,33 +30,99 @@
   },
   "entity": {
     "sensor": {
-      "charging_state": {"name": "Ladezustand"},
-      "max_current": {"name": "Maximalstrom"},
-      "last_session_energy": {"name": "Energie letzte Ladesitzung"},
-      "last_session_charging_rate": {"name": "Laderate letzte Ladesitzung"},
-      "lifetime_energy": {"name": "Gesamtenergie"},
-      "lifetime_charging_time": {"name": "Gesamtladezeit"},
-      "communication_controller_temperature": {"name": "Temperatur Kommunikationscontroller"},
-      "emmc_temperature": {"name": "eMMC-Temperatur"},
-      "input_path_temperature": {"name": "Temperatur Eingangspfad"},
-      "output_path_temperature": {"name": "Temperatur Ausgangspfad"},
-      "power_controller_temperature": {"name": "Temperatur Leistungscontroller"},
-      "relay_temperature": {"name": "Relais-Temperatur"},
-      "relay_state": {"name": "Relaiszustand"},
-      "active_errors": {"name": "Aktive Fehler"}
+      "charging_state": {
+        "name": "Ladezustand"
+      },
+      "max_current": {
+        "name": "Maximalstrom"
+      },
+      "last_session_energy": {
+        "name": "Ladeenergie"
+      },
+      "last_session_charging_rate": {
+        "name": "Ladeleistung"
+      },
+      "lifetime_energy": {
+        "name": "Gesamtenergie"
+      },
+      "lifetime_charging_time": {
+        "name": "Gesamtladezeit"
+      },
+      "communication_controller_temperature": {
+        "name": "Temperatur Kommunikationscontroller"
+      },
+      "emmc_temperature": {
+        "name": "eMMC-Temperatur"
+      },
+      "input_path_temperature": {
+        "name": "Temperatur Eingangspfad"
+      },
+      "output_path_temperature": {
+        "name": "Temperatur Ausgangspfad"
+      },
+      "power_controller_temperature": {
+        "name": "Temperatur Leistungscontroller"
+      },
+      "relay_temperature": {
+        "name": "Relais-Temperatur"
+      },
+      "relay_state": {
+        "name": "Relaiszustand"
+      },
+      "active_errors": {
+        "name": "Aktive Fehler"
+      },
+      "last_charging_session": {
+        "name": "Letzter Ladevorgang",
+        "state": {
+          "available": "Vorhanden",
+          "none": "Nicht vorhanden"
+        }
+      },
+      "rfid_card": {
+        "name": "RFID Karte"
+      },
+      "last_charging_start": {
+        "name": "Letzter Ladestart"
+      }
     },
     "binary_sensor": {
-      "ethernet_connected": {"name": "Ethernet verbunden"},
-      "network_connected": {"name": "Netzwerk verbunden"},
-      "wlan_connected": {"name": "WLAN verbunden"},
-      "lte_connected": {"name": "LTE verbunden"},
-      "ocpp_enabled": {"name": "OCPP aktiviert"},
-      "ocpp_connected": {"name": "OCPP verbunden"},
-      "relay_enabled": {"name": "Phasenumschaltung aktiviert"},
-      "free_charging": {"name": "Freies Laden"},
-      "ground_monitoring_available": {"name": "Erdungsüberwachung verfügbar"},
-      "calibration_law_available": {"name": "Eichrecht verfügbar"},
-      "energy_saving_available": {"name": "Energiesparen verfügbar"}
+      "ethernet_connected": {
+        "name": "Ethernet verbunden"
+      },
+      "network_connected": {
+        "name": "Netzwerk verbunden"
+      },
+      "wlan_connected": {
+        "name": "WLAN verbunden"
+      },
+      "lte_connected": {
+        "name": "LTE verbunden"
+      },
+      "ocpp_enabled": {
+        "name": "OCPP aktiviert"
+      },
+      "ocpp_connected": {
+        "name": "OCPP verbunden"
+      },
+      "relay_enabled": {
+        "name": "Phasenumschaltung aktiviert"
+      },
+      "free_charging": {
+        "name": "Freies Laden"
+      },
+      "ground_monitoring_available": {
+        "name": "Erdungsüberwachung verfügbar"
+      },
+      "calibration_law_available": {
+        "name": "Eichrecht verfügbar"
+      },
+      "energy_saving_available": {
+        "name": "Energiesparen verfügbar"
+      },
+      "vehicle_connected": {
+        "name": "Fahrzeug verbunden"
+      }
     }
   }
 }
