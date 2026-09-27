@@ -188,7 +188,28 @@ class ElliChargerApi:
                 for key, (path, auth) in endpoints.items()
             )
         )
-        return dict(values)
+        data = dict(values)
+
+        # The charging curve can be large. Only request it while a vehicle is
+        # connected / the charger is not explicitly unplugged.
+        state_value = (
+            charging_state.get("value")
+            if isinstance(charging_state, dict)
+            else None
+        )
+        if state_value != "Unplugged":
+            try:
+                data["charging_curve"] = await self._request(
+                    "GET",
+                    "/api/v2/dashboard/charging-curve",
+                    auth=True,
+                )
+            except ElliChargerError:
+                data["charging_curve"] = None
+        else:
+            data["charging_curve"] = None
+
+        return data
 
     async def async_get_static_data(self) -> dict[str, Any]:
         """Fetch mostly static capability and setup information."""
