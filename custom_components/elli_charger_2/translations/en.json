@@ -5,27 +5,16 @@
         "title": "Elli Charger 2",
         "description": "Connect to the local REST API of your Elli Charger 2 Connect.",
         "data": {
-          "host": "IP address or mDNS hostname",
-          "user_type": "User type",
-          "password": "Password"
+          "host": "IP address or mDNS hostname"
         }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to the charger.",
-      "invalid_auth": "Invalid username or password.",
       "invalid_host": "Invalid IP address or hostname."
     },
     "abort": {
       "already_configured": "This charger is already configured."
-    }
-  },
-  "selector": {
-    "user_type": {
-      "options": {
-        "standard": "Standard user",
-        "service": "Service user"
-      }
     }
   },
   "entity": {
