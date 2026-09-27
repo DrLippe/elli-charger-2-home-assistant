@@ -38,6 +38,17 @@ class ElliChargerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except ElliChargerError as err:
             raise UpdateFailed(str(err)) from err
 
-    async def async_event_refresh(self, _event: str) -> None:
-        """Refresh coordinator after a relevant SSE event."""
-        await self.async_request_refresh()
+    async def async_event_refresh(
+        self,
+        event: str,
+        payload: Any | None,
+    ) -> None:
+        """Handle live SSE updates from the charger."""
+        if event == "chargingCurvePointAppend" and isinstance(payload, dict):
+            data = dict(self.data or {})
+            data["charging_curve_point"] = payload
+            self.async_set_updated_data(data)
+            return
+
+        if event in {"deviceStateUpdate", "deviceTemperaturesUpdate"}:
+            await self.async_request_refresh()
