@@ -40,9 +40,6 @@
       "charging_state": {
         "name": "Charging state"
       },
-      "rfid_card": {
-        "name": "RFID card"
-      },
       "last_session_charging_rate": {
         "name": "Charging power"
       },
@@ -51,6 +48,9 @@
       },
       "last_charging_start": {
         "name": "Last charging start"
+      },
+      "authorization_cause": {
+        "name": "Authorization"
       }
     },
     "binary_sensor": {
