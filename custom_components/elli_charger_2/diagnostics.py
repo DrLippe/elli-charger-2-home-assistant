@@ -6,10 +6,10 @@ from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
-TO_REDACT = {CONF_PASSWORD, "token", "backendUsername"}
+# Keep redaction for credentials from config entries created by older versions.
+TO_REDACT = {"password", "token", "backendUsername"}
 
 
 async def async_get_config_entry_diagnostics(
