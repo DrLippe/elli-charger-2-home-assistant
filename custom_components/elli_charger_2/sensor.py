@@ -14,10 +14,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    UnitOfElectricCurrent,
     UnitOfEnergy,
     UnitOfPower,
-    UnitOfTemperature,
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
@@ -160,14 +158,6 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         ),
     ),
     ElliSensorDescription(
-        key="max_current",
-        translation_key="max_current",
-        device_class=SensorDeviceClass.CURRENT,
-        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(d, "charging_limits", "maxCurrent"),
-    ),
-    ElliSensorDescription(
         key="lifetime_energy",
         translation_key="lifetime_energy",
         device_class=SensorDeviceClass.ENERGY,
@@ -186,73 +176,8 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         value_fn=lambda d: _nested(d, "lifetime_stats", "totalChargingTime"),
     ),
-    ElliSensorDescription(
-        key="communication_controller_temperature",
-        translation_key="communication_controller_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(
-            d, "device_temperatures", "communicationControllerTemperature"
-        ),
-    ),
-    ElliSensorDescription(
-        key="emmc_temperature",
-        translation_key="emmc_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(d, "device_temperatures", "eMmcTemperature"),
-    ),
-    ElliSensorDescription(
-        key="input_path_temperature",
-        translation_key="input_path_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(d, "device_temperatures", "inputPathTemperature"),
-    ),
-    ElliSensorDescription(
-        key="output_path_temperature",
-        translation_key="output_path_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(d, "device_temperatures", "outputPathTemperature"),
-    ),
-    ElliSensorDescription(
-        key="power_controller_temperature",
-        translation_key="power_controller_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(
-            d, "device_temperatures", "powerControllerTemperature"
-        ),
-    ),
-    ElliSensorDescription(
-        key="relay_temperature",
-        translation_key="relay_temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: _nested(d, "device_temperatures", "relayTemperature"),
-    ),
-    ElliSensorDescription(
-        key="relay_state",
-        translation_key="relay_state",
-        value_fn=lambda d: _nested(d, "relay_state", "currentState"),
-    ),
-    ElliSensorDescription(
-        key="active_errors",
-        translation_key="active_errors",
-        value_fn=lambda d: sum(
-            1
-            for error in (d.get("errors") or [])
-            if isinstance(error, dict) and error.get("status") != "passive"
-        ),
-    ),
 )
+
 
 
 async def async_setup_entry(
@@ -313,11 +238,6 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
                     "session_start": session.get("startDateTime"),
                 }
             return None
-        if self.entity_description.key == "active_errors":
-            return {"errors": self.coordinator.data.get("errors") or []}
-        if self.entity_description.key == "relay_state":
-            relay = self.coordinator.data.get("relay_state")
-            return relay if isinstance(relay, dict) else None
         if self.entity_description.key == "lifetime_charging_time":
             seconds = _nested(
                 self.coordinator.data,
