@@ -81,29 +81,10 @@ def _last_session_state(data: dict[str, Any]) -> str:
     return "available" if isinstance(data.get("last_session"), dict) else "none"
 
 
-def _rfid_card(data: dict[str, Any]) -> str | None:
-    """Return an RFID/card identifier when the API exposes one."""
-    session = data.get("last_session")
-    if not isinstance(session, dict):
-        return None
-
-    for key in (
-        "rfidCard",
-        "rfid",
-        "rfidTag",
-        "cardId",
-        "tagId",
-        "authorizationId",
-        "idTag",
-    ):
-        value = session.get(key)
-        if value not in (None, ""):
-            return str(value)
-
-    cause = session.get("authorizationCause")
-    if isinstance(cause, str) and "rfid" in cause.lower():
-        return "RFID"
-    return None
+def _authorization_cause(data: dict[str, Any]) -> str | None:
+    """Return the authorization cause of the last started session."""
+    cause = _nested(data, "last_session", "authorizationCause")
+    return str(cause) if cause not in (None, "") else None
 
 
 def _latest_curve_point(data: dict[str, Any]) -> dict[str, Any] | None:
@@ -152,9 +133,9 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
     ),
     ElliSensorDescription(
         key="rfid_card",
-        translation_key="rfid_card",
+        translation_key="authorization_cause",
         icon="mdi:card-account-details-outline",
-        value_fn=_rfid_card,
+        value_fn=_authorization_cause,
     ),
     ElliSensorDescription(
         key="last_session_charging_rate",
@@ -335,7 +316,10 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
         if self.entity_description.key == "rfid_card":
             session = self.coordinator.data.get("last_session")
             if isinstance(session, dict):
-                return {"authorization_cause": session.get("authorizationCause")}
+                return {
+                    "authorization_cause": session.get("authorizationCause"),
+                    "session_start": session.get("startDateTime"),
+                }
             return None
         if self.entity_description.key == "active_errors":
             return {"errors": self.coordinator.data.get("errors") or []}
