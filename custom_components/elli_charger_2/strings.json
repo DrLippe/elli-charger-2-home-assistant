@@ -79,11 +79,11 @@
           "none": "None"
         }
       },
-      "rfid_card": {
-        "name": "RFID card"
-      },
       "last_charging_start": {
         "name": "Last charging start"
+      },
+      "authorization_cause": {
+        "name": "Authorization"
       }
     },
     "binary_sensor": {
