@@ -88,17 +88,9 @@ def _authorization_cause(data: dict[str, Any]) -> str | None:
 
 
 def _latest_curve_point(data: dict[str, Any]) -> dict[str, Any] | None:
-    """Return the newest charging-curve point."""
-    curve = data.get("charging_curve")
-    if not isinstance(curve, dict):
-        return None
-    points = curve.get("curvePoints")
-    if not isinstance(points, list) or not points:
-        return None
-    valid = [point for point in points if isinstance(point, dict)]
-    if not valid:
-        return None
-    return max(valid, key=lambda point: str(point.get("timestamp", "")))
+    """Return the latest live charging-curve point."""
+    point = data.get("charging_curve_point")
+    return point if isinstance(point, dict) else None
 
 
 def _charging_power(data: dict[str, Any]) -> float | None:
