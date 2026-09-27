@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import urlparse
@@ -188,28 +189,7 @@ class ElliChargerApi:
                 for key, (path, auth) in endpoints.items()
             )
         )
-        data = dict(values)
-
-        # The charging curve can be large. Only request it while a vehicle is
-        # connected / the charger is not explicitly unplugged.
-        state_value = (
-            charging_state.get("value")
-            if isinstance(charging_state, dict)
-            else None
-        )
-        if state_value != "Unplugged":
-            try:
-                data["charging_curve"] = await self._request(
-                    "GET",
-                    "/api/v2/dashboard/charging-curve",
-                    auth=True,
-                )
-            except ElliChargerError:
-                data["charging_curve"] = None
-        else:
-            data["charging_curve"] = None
-
-        return data
+        return dict(values)
 
     async def async_get_static_data(self) -> dict[str, Any]:
         """Fetch mostly static capability and setup information."""
@@ -227,7 +207,7 @@ class ElliChargerApi:
 
     async def async_listen_events(
         self,
-        callback: Callable[[str], Awaitable[None]],
+        callback: Callable[[str, Any | None], Awaitable[None]],
     ) -> None:
         """Listen to the unauthenticated SSE event stream."""
         self._event_stop.clear()
@@ -240,22 +220,41 @@ class ElliChargerApi:
                     timeout=ClientTimeout(total=None, sock_read=90),
                 ) as response:
                     response.raise_for_status()
+                    event: str | None = None
+                    data_lines: list[str] = []
+
                     async for raw_line in response.content:
                         if self._event_stop.is_set():
                             return
-                        line = raw_line.decode(errors="ignore").strip()
-                        if not line.startswith("event:"):
+
+                        line = raw_line.decode(errors="ignore").rstrip("\r\n")
+
+                        if not line:
+                            if event is not None:
+                                raw_data = "\n".join(data_lines)
+                                payload: Any | None = None
+                                if raw_data:
+                                    try:
+                                        payload = json.loads(raw_data)
+                                    except json.JSONDecodeError:
+                                        payload = raw_data
+                                await callback(event, payload)
+                            event = None
+                            data_lines = []
                             continue
-                        event = line.partition(":")[2].strip()
-                        if event in {"deviceStateUpdate", "deviceTemperaturesUpdate"}:
-                            await callback(event)
+
+                        if line.startswith("event:"):
+                            event = line.partition(":")[2].strip()
+                        elif line.startswith("data:"):
+                            data_lines.append(line.partition(":")[2].lstrip())
+
             except (ClientError, asyncio.TimeoutError):
                 if not self._event_stop.is_set():
                     await asyncio.sleep(5)
 
     def start_event_listener(
         self,
-        callback: Callable[[str], Awaitable[None]],
+        callback: Callable[[str, Any | None], Awaitable[None]],
     ) -> None:
         """Start the background SSE listener."""
         if self._event_task is None or self._event_task.done():
