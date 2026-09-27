@@ -5,36 +5,22 @@
         "title": "Elli Charger 2",
         "description": "Connect to the local REST API of your Elli Charger 2 Connect.",
         "data": {
-          "host": "IP address or mDNS hostname",
-          "user_type": "User type",
-          "password": "Password"
+          "host": "IP address or mDNS hostname"
         }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to the charger.",
-      "invalid_auth": "Invalid username or password.",
       "invalid_host": "Invalid IP address or hostname."
     },
     "abort": {
       "already_configured": "This charger is already configured."
     }
   },
-  "selector": {
-    "user_type": {
-      "options": {
-        "standard": "Standard user",
-        "service": "Service user"
-      }
-    }
-  },
   "entity": {
     "sensor": {
       "charging_state": {
         "name": "Charging state"
-      },
-      "max_current": {
-        "name": "Maximum current"
       },
       "last_session_energy": {
         "name": "Charging energy"
@@ -47,30 +33,6 @@
       },
       "lifetime_charging_time": {
         "name": "Lifetime charging time"
-      },
-      "communication_controller_temperature": {
-        "name": "Communication controller temperature"
-      },
-      "emmc_temperature": {
-        "name": "eMMC temperature"
-      },
-      "input_path_temperature": {
-        "name": "Input path temperature"
-      },
-      "output_path_temperature": {
-        "name": "Output path temperature"
-      },
-      "power_controller_temperature": {
-        "name": "Power controller temperature"
-      },
-      "relay_temperature": {
-        "name": "Relay temperature"
-      },
-      "relay_state": {
-        "name": "Relay state"
-      },
-      "active_errors": {
-        "name": "Active errors"
       },
       "last_charging_session": {
         "name": "Last charging session",
@@ -87,39 +49,6 @@
       }
     },
     "binary_sensor": {
-      "ethernet_connected": {
-        "name": "Ethernet connected"
-      },
-      "network_connected": {
-        "name": "Network connected"
-      },
-      "wlan_connected": {
-        "name": "Wi-Fi connected"
-      },
-      "lte_connected": {
-        "name": "LTE connected"
-      },
-      "ocpp_enabled": {
-        "name": "OCPP enabled"
-      },
-      "ocpp_connected": {
-        "name": "OCPP connected"
-      },
-      "relay_enabled": {
-        "name": "Relay switching enabled"
-      },
-      "free_charging": {
-        "name": "Free charging"
-      },
-      "ground_monitoring_available": {
-        "name": "Ground monitoring available"
-      },
-      "calibration_law_available": {
-        "name": "Calibration law available"
-      },
-      "energy_saving_available": {
-        "name": "Energy saving available"
-      },
       "vehicle_connected": {
         "name": "Vehicle connected"
       }
