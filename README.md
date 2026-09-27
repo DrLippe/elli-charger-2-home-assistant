@@ -4,15 +4,25 @@ Local Home Assistant custom integration for the **Elli Charger 2 Connect** using
 
 ## Current scope
 
-- UI config flow with IP/mDNS hostname
-- Standard user (`standard`) or service user (`technician`)
-- JWT authentication via `POST /api/v2/jwt/login`
-- Automatic re-login on an expired/rejected JWT
+The integration is currently running in a temporary **unauthenticated-only mode**.
+
+- UI config flow with IP/mDNS hostname only
+- No username/password required
+- No JWT login
+- Only API endpoints that are reachable without authentication are queried
 - Local polling via a Home Assistant `DataUpdateCoordinator`
-- SSE listener on `/api/v2/events` to trigger fast refreshes for device state and temperature updates
-- Charging state, limits, lifetime/session values, temperatures and relay state
-- Ethernet/network/WLAN/LTE, OCPP and capability binary sensors
-- Handles HTTP 204 as an unavailable/not-connected value instead of an API error
+- Live SSE listener on `/api/v2/events`
+- Live charging power from `chargingCurvePointAppend`
+- Charging state
+- Vehicle connected state
+- Last started charging session
+- Charging authorization cause
+- Charging energy
+- Last charging start
+- Lifetime energy and charging time
+- Handles HTTP 204 as an empty/not-connected response
+
+Authenticated configuration, diagnostics and control endpoints are intentionally disabled for now.
 
 ## Installation
 
@@ -24,6 +34,6 @@ Restart Home Assistant and add **Elli Charger 2** through **Settings → Devices
 
 The charger uses a local HTTPS endpoint. Certificate verification is currently disabled because local device certificates may not validate against Home Assistant's trust store.
 
-Energy/rate values whose unit has not yet been confirmed from the device API are intentionally exposed without a Home Assistant unit/device class for now.
+API energy values are supplied in Wh and exposed as kWh where appropriate. Charging time is supplied in seconds.
 
 This project is an independent community integration and is not affiliated with Elli.
