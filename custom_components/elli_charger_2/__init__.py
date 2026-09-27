@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, CONF_PASSWORD
+from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ElliChargerApi
-from .const import CONF_USER_TYPE, DOMAIN, PLATFORMS
+from .const import PLATFORMS
 from .coordinator import ElliChargerCoordinator
 
 type ElliChargerConfigEntry = ConfigEntry[ElliChargerCoordinator]
@@ -19,10 +19,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ElliChargerConfigEntry) 
     api = ElliChargerApi(
         async_get_clientsession(hass),
         entry.data[CONF_HOST],
-        entry.data[CONF_USER_TYPE],
-        entry.data[CONF_PASSWORD],
     )
-    await api.async_login()
 
     coordinator = ElliChargerCoordinator(hass, api)
     await coordinator.async_setup()
