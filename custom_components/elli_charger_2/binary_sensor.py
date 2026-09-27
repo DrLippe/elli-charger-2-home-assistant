@@ -137,3 +137,26 @@ class ElliBinarySensor(ElliChargerEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         """Return binary state."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return vehicle details when available."""
+        if self.entity_description.key != "vehicle_connected":
+            return None
+
+        vehicle = self.coordinator.data.get("plugged_vehicle")
+        if isinstance(vehicle, dict):
+            return vehicle
+
+        session = self.coordinator.data.get("last_session")
+        if not isinstance(session, dict):
+            return None
+
+        return {
+            "brand": session.get("brand"),
+            "model": session.get("model"),
+            "name": session.get("name"),
+            "latest_soc": session.get("latestSOC"),
+            "target_soc": session.get("targetSOC"),
+            "range": session.get("range"),
+        }
