@@ -106,6 +106,35 @@ def _rfid_card(data: dict[str, Any]) -> str | None:
     return None
 
 
+def _latest_curve_point(data: dict[str, Any]) -> dict[str, Any] | None:
+    """Return the newest charging-curve point."""
+    curve = data.get("charging_curve")
+    if not isinstance(curve, dict):
+        return None
+    points = curve.get("curvePoints")
+    if not isinstance(points, list) or not points:
+        return None
+    valid = [point for point in points if isinstance(point, dict)]
+    if not valid:
+        return None
+    return max(valid, key=lambda point: str(point.get("timestamp", "")))
+
+
+def _charging_power(data: dict[str, Any]) -> float | None:
+    """Return current total charging power in kW."""
+    point = _latest_curve_point(data)
+    if point is not None:
+        phases = [point.get("powerL1"), point.get("powerL2"), point.get("powerL3")]
+        if all(isinstance(value, (int, float)) for value in phases):
+            return round(sum(phases), 3)
+
+    # Fallback for devices/firmware that do not expose the charging curve.
+    rate = _nested(data, "last_session", "chargingRate")
+    if isinstance(rate, (int, float)) and rate >= 0:
+        return rate
+    return None
+
+
 SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
         key="last_charging_session",
@@ -134,7 +163,7 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:flash",
-        value_fn=lambda d: _nested(d, "last_session", "chargingRate"),
+        value_fn=_charging_power,
     ),
     ElliSensorDescription(
         key="last_session_energy",
@@ -292,6 +321,17 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
         if self.entity_description.key == "last_charging_session":
             session = self.coordinator.data.get("last_session")
             return session if isinstance(session, dict) else None
+        if self.entity_description.key == "last_session_charging_rate":
+            point = _latest_curve_point(self.coordinator.data)
+            if point is None:
+                return {"source": "last_started_session.chargingRate"}
+            return {
+                "source": "charging_curve",
+                "power_l1_kw": point.get("powerL1"),
+                "power_l2_kw": point.get("powerL2"),
+                "power_l3_kw": point.get("powerL3"),
+                "timestamp": point.get("timestamp"),
+            }
         if self.entity_description.key == "rfid_card":
             session = self.coordinator.data.get("last_session")
             if isinstance(session, dict):
