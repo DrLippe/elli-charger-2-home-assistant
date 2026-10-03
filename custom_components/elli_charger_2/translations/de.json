@@ -3,15 +3,26 @@
     "step": {
       "user": {
         "title": "Elli Charger 2",
-        "description": "Verbindung mit der lokalen REST-API des Elli Charger 2 Connect herstellen.",
+        "description": "Ohne Passwort werden nur frei zugängliche Daten abgerufen. Mit Passwort werden zusätzlich geschützte Funktionen aktiviert.",
         "data": {
-          "host": "IP-Adresse oder mDNS-Hostname"
+          "host": "IP-Adresse oder mDNS-Hostname",
+          "user_type": "Benutzertyp (optional)",
+          "password": "Passwort (optional)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Optionale Anmeldung",
+        "description": "Zum Aktivieren oder Ändern das Passwort eingeben. Ein leeres Passwort deaktiviert die Anmeldung. Gespeicherte Passwörter werden nicht angezeigt.",
+        "data": {
+          "user_type": "Benutzertyp (optional)",
+          "password": "Passwort (optional)"
         }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zur Wallbox fehlgeschlagen.",
-      "invalid_host": "IP-Adresse oder Hostname ungültig."
+      "invalid_host": "IP-Adresse oder Hostname ungültig.",
+      "invalid_auth": "Anmeldung fehlgeschlagen. Benutzertyp und Passwort prüfen."
     },
     "abort": {
       "already_configured": "Diese Wallbox ist bereits eingerichtet."
@@ -35,23 +46,104 @@
         "name": "Gesamtladezeit"
       },
       "last_charging_session": {
-        "name": "Letzter Ladevorgang",
-        "state": {
-          "available": "Vorhanden",
-          "none": "Nicht vorhanden"
-        }
+        "name": "Letzter Ladevorgang"
       },
       "last_charging_start": {
         "name": "Letzter Ladestart"
       },
       "authorization_cause": {
         "name": "Autorisierung"
+      },
+      "max_current": {
+        "name": "Maximalstrom"
+      },
+      "communication_controller_temperature": {
+        "name": "Temperatur Kommunikationscontroller"
+      },
+      "emmc_temperature": {
+        "name": "eMMC-Temperatur"
+      },
+      "input_path_temperature": {
+        "name": "Temperatur Eingangspfad"
+      },
+      "output_path_temperature": {
+        "name": "Temperatur Ausgangspfad"
+      },
+      "power_controller_temperature": {
+        "name": "Temperatur Leistungscontroller"
+      },
+      "relay_temperature": {
+        "name": "Relais-Temperatur"
+      },
+      "relay_state": {
+        "name": "Relaiszustand"
+      },
+      "active_errors": {
+        "name": "Aktive Fehler"
       }
     },
     "binary_sensor": {
       "vehicle_connected": {
         "name": "Fahrzeug verbunden"
+      },
+      "ethernet_connected": {
+        "name": "Ethernet verbunden"
+      },
+      "network_connected": {
+        "name": "Netzwerk verbunden"
+      },
+      "wlan_connected": {
+        "name": "WLAN verbunden"
+      },
+      "lte_connected": {
+        "name": "LTE verbunden"
+      },
+      "ocpp_enabled": {
+        "name": "OCPP aktiviert"
+      },
+      "ocpp_connected": {
+        "name": "OCPP verbunden"
+      },
+      "relay_enabled": {
+        "name": "Phasenumschaltung aktiviert"
+      },
+      "free_charging": {
+        "name": "Freies Laden"
+      },
+      "ground_monitoring_available": {
+        "name": "Erdungsüberwachung verfügbar"
+      },
+      "calibration_law_available": {
+        "name": "Eichrecht verfügbar"
+      },
+      "energy_saving_available": {
+        "name": "Energiesparen verfügbar"
       }
+    }
+  },
+  "selector": {
+    "user_type": {
+      "options": {
+        "standard": "Standardbenutzer",
+        "service": "Servicebenutzer (technician)"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionale Anmeldung",
+        "description": "Zum Aktivieren oder Ändern das Passwort eingeben. Ein leeres Passwort deaktiviert die Anmeldung. Gespeicherte Passwörter werden nicht angezeigt.",
+        "data": {
+          "user_type": "Benutzertyp (optional)",
+          "password": "Passwort (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur Wallbox fehlgeschlagen.",
+      "invalid_host": "IP-Adresse oder Hostname ungültig.",
+      "invalid_auth": "Anmeldung fehlgeschlagen. Benutzertyp und Passwort prüfen."
     }
   }
 }

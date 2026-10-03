@@ -3,15 +3,26 @@
     "step": {
       "user": {
         "title": "Elli Charger 2",
-        "description": "Connect to the local REST API of your Elli Charger 2 Connect.",
+        "description": "Leave password empty for public data only. Supply a password to enable protected features.",
         "data": {
-          "host": "IP address or mDNS hostname"
+          "host": "IP address or mDNS hostname",
+          "user_type": "User type (optional)",
+          "password": "Password (optional)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Optional authentication",
+        "description": "Enter a password to enable or change authentication. Leaving it empty disables authentication. Stored passwords are not displayed.",
+        "data": {
+          "user_type": "User type (optional)",
+          "password": "Password (optional)"
         }
       }
     },
     "error": {
       "cannot_connect": "Failed to connect to the charger.",
-      "invalid_host": "Invalid IP address or hostname."
+      "invalid_host": "Invalid IP address or hostname.",
+      "invalid_auth": "Login failed. Check user type and password."
     },
     "abort": {
       "already_configured": "This charger is already configured."
@@ -20,11 +31,7 @@
   "entity": {
     "sensor": {
       "last_charging_session": {
-        "name": "Last charging session",
-        "state": {
-          "available": "Available",
-          "none": "None"
-        }
+        "name": "Last charging session"
       },
       "charging_state": {
         "name": "Charging state"
@@ -40,12 +47,103 @@
       },
       "authorization_cause": {
         "name": "Authorization"
+      },
+      "lifetime_energy": {
+        "name": "Lifetime energy"
+      },
+      "lifetime_charging_time": {
+        "name": "Lifetime charging time"
+      },
+      "max_current": {
+        "name": "Maximum current"
+      },
+      "communication_controller_temperature": {
+        "name": "Communication controller temperature"
+      },
+      "emmc_temperature": {
+        "name": "eMMC temperature"
+      },
+      "input_path_temperature": {
+        "name": "Input path temperature"
+      },
+      "output_path_temperature": {
+        "name": "Output path temperature"
+      },
+      "power_controller_temperature": {
+        "name": "Power controller temperature"
+      },
+      "relay_temperature": {
+        "name": "Relay temperature"
+      },
+      "relay_state": {
+        "name": "Relay state"
+      },
+      "active_errors": {
+        "name": "Active errors"
       }
     },
     "binary_sensor": {
       "vehicle_connected": {
         "name": "Vehicle connected"
+      },
+      "ethernet_connected": {
+        "name": "Ethernet connected"
+      },
+      "network_connected": {
+        "name": "Network connected"
+      },
+      "wlan_connected": {
+        "name": "Wi-Fi connected"
+      },
+      "lte_connected": {
+        "name": "LTE connected"
+      },
+      "ocpp_enabled": {
+        "name": "OCPP enabled"
+      },
+      "ocpp_connected": {
+        "name": "OCPP connected"
+      },
+      "relay_enabled": {
+        "name": "Relay switching enabled"
+      },
+      "free_charging": {
+        "name": "Free charging"
+      },
+      "ground_monitoring_available": {
+        "name": "Ground monitoring available"
+      },
+      "calibration_law_available": {
+        "name": "Calibration law available"
+      },
+      "energy_saving_available": {
+        "name": "Energy saving available"
       }
+    }
+  },
+  "selector": {
+    "user_type": {
+      "options": {
+        "standard": "Standard user",
+        "service": "Service user (technician)"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optional authentication",
+        "description": "Enter a password to enable or change authentication. Leaving it empty disables authentication. Stored passwords are not displayed.",
+        "data": {
+          "user_type": "User type (optional)",
+          "password": "Password (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the charger.",
+      "invalid_host": "Invalid IP address or hostname.",
+      "invalid_auth": "Login failed. Check user type and password."
     }
   }
 }

@@ -1,4 +1,4 @@
-"""Local unauthenticated REST API client for Elli Charger 2 Connect."""
+"""Local REST API client for Elli Charger 2 Connect."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ from urllib.parse import urlparse
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 
+from .const import API_USER_SERVICE, API_USER_STANDARD, USER_TYPE_SERVICE
+
 
 class ElliChargerError(Exception):
     """Base exception for Elli Charger API errors."""
@@ -18,6 +20,10 @@ class ElliChargerError(Exception):
 
 class ElliChargerConnectionError(ElliChargerError):
     """Raised when the charger cannot be reached."""
+
+
+class ElliChargerAuthenticationError(ElliChargerError):
+    """Raised when authentication fails."""
 
 
 def normalize_host(host: str) -> str:
@@ -32,11 +38,21 @@ def normalize_host(host: str) -> str:
 
 
 class ElliChargerApi:
-    """Async client for the unauthenticated local Charger 2 REST API."""
+    """Async client for the local Elli Charger 2 REST API."""
 
-    def __init__(self, session: ClientSession, host: str) -> None:
+    def __init__(
+        self,
+        session: ClientSession,
+        host: str,
+        user_type: str = "standard",
+        password: str = "",
+    ) -> None:
         self._session = session
         self._base_url = normalize_host(host)
+        self._user_type = user_type
+        self._password = password
+        self._token: str | None = None
+        self._login_lock = asyncio.Lock()
         self._event_task: asyncio.Task[None] | None = None
         self._event_stop = asyncio.Event()
 
@@ -45,15 +61,77 @@ class ElliChargerApi:
         """Return normalized base URL."""
         return self._base_url
 
-    async def _request(self, method: str, path: str) -> Any:
-        """Perform an unauthenticated API request."""
+    @property
+    def authentication_enabled(self) -> bool:
+        """Only use protected endpoints when a password was supplied."""
+        return bool(self._password)
+
+    @property
+    def api_user(self) -> str:
+        """Return API username for configured account type."""
+        return API_USER_SERVICE if self._user_type == USER_TYPE_SERVICE else API_USER_STANDARD
+
+    async def async_login(self) -> None:
+        """Authenticate and cache the JWT in memory."""
+        if not self.authentication_enabled:
+            raise ElliChargerAuthenticationError("No credentials configured")
+        try:
+            async with self._session.post(
+                f"{self._base_url}/api/v2/jwt/login",
+                data={"user": self.api_user, "pass": self._password},
+                ssl=False,
+                timeout=ClientTimeout(total=10),
+            ) as response:
+                if response.status in (401, 403):
+                    raise ElliChargerAuthenticationError("Invalid credentials")
+                response.raise_for_status()
+                payload = await response.json()
+        except ElliChargerAuthenticationError:
+            raise
+        except (ClientError, asyncio.TimeoutError, ValueError) as err:
+            raise ElliChargerConnectionError(str(err)) from err
+
+        token = payload.get("token") if isinstance(payload, dict) else None
+        if not token:
+            raise ElliChargerAuthenticationError("Login response did not contain a token")
+        self._token = str(token)
+
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        auth: bool = False,
+        retry_auth: bool = True,
+    ) -> Any:
+        if auth:
+            if not self.authentication_enabled:
+                raise ElliChargerAuthenticationError("No credentials configured")
+            async with self._login_lock:
+                if not self._token:
+                    await self.async_login()
+
+        headers = {"Authorization": f"Bearer {self._token}"} if auth else {}
+        request_token = self._token
         try:
             async with self._session.request(
                 method,
                 f"{self._base_url}{path}",
+                headers=headers,
                 ssl=False,
                 timeout=ClientTimeout(total=15),
             ) as response:
+                if response.status == 401 and auth and retry_auth:
+                    # Concurrent polls must share one renewed token. A 403 is a
+                    # permission failure and must not cause repeated logins.
+                    async with self._login_lock:
+                        if self._token == request_token:
+                            await self.async_login()
+                    return await self._request(
+                        method, path, auth=True, retry_auth=False
+                    )
+                if response.status in (401, 403):
+                    raise ElliChargerAuthenticationError("Authentication rejected")
                 if response.status == 204:
                     return None
                 response.raise_for_status()
@@ -61,34 +139,79 @@ class ElliChargerApi:
                     return await response.json()
                 text = await response.text()
                 return text or None
+        except ElliChargerAuthenticationError:
+            raise
         except (ClientError, asyncio.TimeoutError, ValueError) as err:
             raise ElliChargerConnectionError(str(err)) from err
 
     async def async_get_data(self) -> dict[str, Any]:
-        """Fetch only endpoints that do not require authentication."""
-        endpoints = {
-            "charging_state": "/api/v2/charging/state",
-            "last_session": "/api/v2/charging/last-started-session",
-            "plugged_vehicle": "/api/v2/vehicles/plugged",
-            "lifetime_stats": "/api/v2/charging/lifetime-stats",
-            "energy_meter": "/api/v2/system/energy-meter",
+        """Fetch the current state used by Home Assistant entities."""
+        endpoints: dict[str, tuple[str, bool]] = {
+            "charging_state": ("/api/v2/charging/state", False),
+            "last_session": ("/api/v2/charging/last-started-session", False),
+            "plugged_vehicle": ("/api/v2/vehicles/plugged", False),
+            "lifetime_stats": ("/api/v2/charging/lifetime-stats", False),
+            "energy_meter": ("/api/v2/system/energy-meter", False),
+            "ethernet_connected": ("/api/v2/connection/ethernet/connected", True),
+            "network_connected": ("/api/v2/connection/network/connected", True),
+            "wlan_connected": ("/api/v2/connection/wlan-client/connected", True),
+            "lte_connected": ("/api/v2/connection/lte/connected", True),
+            "lte_status": ("/api/v2/connection/lte/status", True),
+            "ocpp": ("/api/v2/connection/ocpp", True),
+            "ocpp_enabled": ("/api/v2/connection/ocpp/enabled", True),
+            "ocpp_connected": ("/api/v2/connection/ocpp/connected", True),
+            "eebus_paired": ("/api/v2/connection/eebus/paired", True),
+            "charging_limits": ("/api/v2/charging/limits", True),
+            "relay_state": ("/api/v2/system/relais-switch/state", True),
+            "relay_enabled": ("/api/v2/system/relais-switch/enabled", True),
+            "free_charging": ("/api/v2/charging/free-charging", True),
+            "errors": ("/api/v2/system/errors", True),
+            "restrictions": ("/api/v2/charging/restrictions", True),
+            "update_info": ("/api/v2/system/update/info", True),
+            "ground_monitoring_available": (
+                "/api/v2/system/ground-monitoring/available",
+                True,
+            ),
+            "calibration_law_available": (
+                "/api/v2/system/enable-calibration-law/available",
+                True,
+            ),
+            "energy_saving_available": (
+                "/api/v2/system/energy-saving/available",
+                True,
+            ),
+            "device_state": ("/api/v2/system/device-state", True),
+            "device_temperatures": ("/api/v2/system/device-temperatures", True),
         }
 
-        async def fetch_optional(key: str, path: str) -> tuple[str, Any]:
+        # The unauthenticated charging state is our connectivity baseline.
+        # Additional authenticated endpoints may be unavailable for the standard
+        # account or on hardware variants, so they must not take down the whole
+        # integration.
+        charging_state = await self._request(
+            "GET", "/api/v2/charging/state", auth=False
+        )
+
+        async def fetch_optional(key: str, path: str, auth: bool) -> tuple[str, Any]:
+            if key == "charging_state":
+                return key, charging_state
+            if auth and not self.authentication_enabled:
+                return key, None
             try:
-                return key, await self._request("GET", path)
+                return key, await self._request("GET", path, auth=auth)
             except ElliChargerError:
-                if key == "charging_state":
-                    raise
                 return key, None
 
         values = await asyncio.gather(
-            *(fetch_optional(key, path) for key, path in endpoints.items())
+            *(
+                fetch_optional(key, path, auth)
+                for key, (path, auth) in endpoints.items()
+            )
         )
         return dict(values)
 
     async def async_get_static_data(self) -> dict[str, Any]:
-        """Fetch unauthenticated static capability and setup information."""
+        """Fetch mostly static capability and setup information."""
         endpoints = {
             "language": "/api/v2/system/languages/selected",
             "onboarding": "/api/v2/system/onboarding",
@@ -97,7 +220,7 @@ class ElliChargerApi:
             "phase_type_required": "/api/v2/charging/phase-type/required",
         }
         values = await asyncio.gather(
-            *(self._request("GET", path) for path in endpoints.values())
+            *(self._request("GET", path, auth=False) for path in endpoints.values())
         )
         return dict(zip(endpoints, values, strict=True))
 

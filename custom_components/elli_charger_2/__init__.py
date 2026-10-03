@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST
+from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import ElliChargerApi
-from .const import PLATFORMS
+from .api import ElliChargerApi, ElliChargerAuthenticationError, ElliChargerConnectionError
+from .const import CONF_USER_TYPE, PLATFORMS, USER_TYPE_STANDARD
 from .coordinator import ElliChargerCoordinator
 
 type ElliChargerConfigEntry = ConfigEntry[ElliChargerCoordinator]
@@ -19,7 +20,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ElliChargerConfigEntry) 
     api = ElliChargerApi(
         async_get_clientsession(hass),
         entry.data[CONF_HOST],
+        entry.options.get(CONF_USER_TYPE, entry.data.get(CONF_USER_TYPE, USER_TYPE_STANDARD)),
+        entry.options.get(CONF_PASSWORD, entry.data.get(CONF_PASSWORD, "")),
     )
+    if api.authentication_enabled:
+        try:
+            await api.async_login()
+        except ElliChargerAuthenticationError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except ElliChargerConnectionError as err:
+            raise ConfigEntryNotReady(str(err)) from err
 
     coordinator = ElliChargerCoordinator(hass, api)
     await coordinator.async_setup()
