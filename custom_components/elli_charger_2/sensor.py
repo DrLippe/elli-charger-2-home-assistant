@@ -20,6 +20,7 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTemperature,
 )
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -171,6 +172,16 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:car-battery",
         value_fn=_battery_soc,
+    ),
+    ElliSensorDescription(
+        key="vehicle_api_diagnostics",
+        translation_key="vehicle_api_diagnostics",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        icon="mdi:car-info",
+        value_fn=lambda d: "data_received" if isinstance(
+            d.get("plugged_vehicle"), dict
+        ) else None,
     ),
     ElliSensorDescription(
         key="last_charging_start",
@@ -331,6 +342,16 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return useful diagnostic attributes."""
+        if self.entity_description.key == "vehicle_api_diagnostics":
+            vehicle = self.coordinator.data.get("plugged_vehicle")
+            session = self.coordinator.data.get("last_session")
+            return {
+                "plugged_vehicle": vehicle,
+                "plugged_vehicle_fields": sorted(vehicle) if isinstance(vehicle, dict) else [],
+                "last_started_session": session,
+                "charging_state": self.coordinator.data.get("charging_state"),
+                "note": "Latest polled values; session can refer to a previous charge.",
+            }
         if self.entity_description.key == "last_charging_session":
             session = self.coordinator.data.get("last_session")
             return session if isinstance(session, dict) else None
