@@ -80,6 +80,9 @@
       },
       "active_errors": {
         "name": "Active errors"
+      },
+      "vehicle_battery_level": {
+        "name": "Vehicle battery level"
       }
     },
     "binary_sensor": {
