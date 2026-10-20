@@ -83,6 +83,9 @@
       },
       "vehicle_battery_level": {
         "name": "Vehicle battery level"
+      },
+      "vehicle_api_diagnostics": {
+        "name": "Vehicle API diagnostics"
       }
     },
     "binary_sensor": {
