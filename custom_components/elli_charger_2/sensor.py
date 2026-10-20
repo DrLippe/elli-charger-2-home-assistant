@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from math import isfinite
 from typing import Any, Callable
 
 from homeassistant.components.sensor import (
@@ -45,6 +46,16 @@ def _wh_to_kwh(value: Any) -> float | None:
     if not isinstance(value, (int, float)) or value < 0:
         return None
     return round(value / 1000, 3)
+
+
+def _battery_soc(data: dict[str, Any]) -> float | None:
+    """Return a valid SoC percentage from the latest charging session."""
+    value = _nested(data, "last_session", "latestSOC")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if not isfinite(value) or not 0 <= value <= 100:
+        return None
+    return float(value)
 
 
 def _parse_datetime(value: Any) -> datetime | None:
@@ -151,6 +162,15 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         value_fn=lambda d: _wh_to_kwh(
             _nested(d, "last_session", "energyConsumption")
         ),
+    ),
+    ElliSensorDescription(
+        key="vehicle_battery_level",
+        translation_key="vehicle_battery_level",
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement="%",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:car-battery",
+        value_fn=_battery_soc,
     ),
     ElliSensorDescription(
         key="last_charging_start",
