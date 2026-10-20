@@ -83,6 +83,9 @@
       },
       "vehicle_battery_level": {
         "name": "Fahrzeug-Akkustand"
+      },
+      "vehicle_api_diagnostics": {
+        "name": "Fahrzeug-API-Diagnose"
       }
     },
     "binary_sensor": {
