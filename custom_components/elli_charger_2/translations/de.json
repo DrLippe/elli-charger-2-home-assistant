@@ -80,6 +80,9 @@
       },
       "active_errors": {
         "name": "Aktive Fehler"
+      },
+      "vehicle_battery_level": {
+        "name": "Fahrzeug-Akkustand"
       }
     },
     "binary_sensor": {
