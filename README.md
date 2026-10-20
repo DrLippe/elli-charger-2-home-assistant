@@ -18,6 +18,7 @@ Authentication is optional. Leave the password empty to use public REST endpoint
 - Last started charging session
 - Charging authorization cause
 - Charging energy
+- Vehicle battery level (latest SoC reported by the last started session, when valid; may be stale)
 - Last charging start
 - Lifetime energy and charging time
 - Handles HTTP 204 as an empty/not-connected response
