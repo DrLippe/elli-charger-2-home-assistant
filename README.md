@@ -15,6 +15,7 @@ Authentication is optional. Leave the password empty to use public REST endpoint
 - Live charging power from `chargingCurvePointAppend`
 - Charging state
 - Vehicle connected state
+- Disabled-by-default diagnostic sensor exposing current `/api/v2/vehicles/plugged` response and the most recent charging session as attributes (enable in entity settings to inspect before/after authorization)
 - Last started charging session
 - Charging authorization cause
 - Charging energy
@@ -34,6 +35,12 @@ Copy `custom_components/elli_charger_2` into your Home Assistant `custom_compone
 Restart Home Assistant and add **Elli Charger 2** through **Settings → Devices & services → Add integration**.
 
 For an existing installation, open **Settings → Devices & services → Elli Charger 2 → Configure** to set the optional credentials. Enter the password whenever saving authentication options. Leaving the password empty disables authentication, including credentials stored by older versions. Saving reloads the integration automatically.
+
+## Inspecting vehicle data before authorization
+
+Enable the disabled **Vehicle API diagnostics** entity under the Elli Charger 2 device in Home Assistant. Plug in the car without authorizing charging, then inspect its attributes under Developer Tools → States. Compare with a second snapshot after authorization and another after charging begins.
+
+`plugged_vehicle` contains the live response from `/api/v2/vehicles/plugged`; `last_started_session` comes from `/api/v2/charging/last-started-session` and may belong to a prior charging event. A null `plugged_vehicle` can mean no plugged-in car, a 204 response, or an unavailable endpoint. This sensor does not persist snapshots or prove that a field was transmitted before authorization. The response may include vehicle identifiers: avoid sharing unredacted attributes. Because Home Assistant may record sensor attributes, disable the entity when inspection is complete.
 
 ## Notes
 
