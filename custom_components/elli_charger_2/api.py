@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import math
 from collections.abc import Awaitable, Callable
 from typing import Any
 from urllib.parse import urlparse
@@ -190,6 +191,69 @@ class ElliChargerApi:
         if payload is None:
             raise ValueError("An explicit JSON payload is required")
         return await self._request("PUT", paths[setting], auth=True, json_body=payload)
+
+    @staticmethod
+    def _integer_value(value: int) -> int:
+        """Ensure JSON integers cannot silently truncate floats or booleans."""
+        if type(value) is not int or value < 0:
+            raise ValueError("Expected a non-negative integer")
+        return value
+
+    @staticmethod
+    def _enabled_value(enabled: bool) -> dict[str, bool]:
+        """Build the firmware's Enabled model."""
+        if type(enabled) is not bool:
+            raise ValueError("Expected a boolean")
+        return {"enabled": enabled}
+
+    async def async_set_direct_authorization(self, allow: bool) -> Any:
+        """Set the firmware's allow/deny direct authorization mode."""
+        if type(allow) is not bool:
+            raise ValueError("Expected a boolean")
+        return await self.async_put_charging_setting(
+            "direct_authorization", {"value": "allow" if allow else "deny"}
+        )
+
+    async def async_set_free_charging(self, enabled: bool) -> Any:
+        """Set free charging (technician permission required)."""
+        return await self.async_put_charging_setting(
+            "free_charging", self._enabled_value(enabled)
+        )
+
+    async def async_set_user_limit_current(self, value: int) -> Any:
+        """Set the user current limit with the firmware's Current model."""
+        return await self.async_put_charging_setting(
+            "user_limit_current", {"value": self._integer_value(value)}
+        )
+
+    async def async_set_user_limit_power(self, value: int) -> Any:
+        """Set the user power limit with the firmware's Power model."""
+        return await self.async_put_charging_setting(
+            "user_limit_power", {"value": self._integer_value(value)}
+        )
+
+    async def async_set_charging_limits(
+        self, max_power: float, max_current: int
+    ) -> Any:
+        """Set the firmware's ChargingLimits model.
+
+        Units and hardware-specific acceptable ranges require live validation.
+        """
+        if (type(max_power) not in (int, float)
+                or not math.isfinite(max_power) or max_power < 0):
+            raise ValueError("Expected a finite non-negative maximum power")
+        return await self.async_put_charging_setting(
+            "limits", {
+                "maxPower": float(max_power),
+                "maxCurrent": self._integer_value(max_current),
+            }
+        )
+
+    async def async_set_ocpp_remote_start_enabled(self, enabled: bool) -> Any:
+        """Set OCPP remote-start capability (technician permission required)."""
+        return await self.async_put_charging_setting(
+            "ocpp_remote_start_enabled", self._enabled_value(enabled)
+        )
 
     async def async_get_data(self) -> dict[str, Any]:
         """Fetch the current state used by Home Assistant entities."""
