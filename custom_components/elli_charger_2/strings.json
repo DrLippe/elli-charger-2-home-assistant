@@ -29,6 +29,11 @@
     }
   },
   "entity": {
+    "switch": {
+      "direct_authorization": {
+        "name": "Direct charging authorization"
+      }
+    },
     "sensor": {
       "charging_state": {
         "name": "Charging state"

@@ -75,6 +75,16 @@ users; the other four PUTs require technician permissions. These methods are not
 yet exposed as Home Assistant controls or invoked automatically. APK-discovered
 cloud endpoints are explicitly out of scope.
 
+### Direct charging authorization switch
+
+With local credentials, Home Assistant exposes **Direct charging authorization**
+as a switch. Turning it on sends `PUT {"value":"allow"}` and turning it off
+sends `PUT {"value":"deny"}`. The state is read from the corresponding GET
+response (`allowed`/`allow` or `denied`/`deny`); malformed or unavailable
+responses yield an unknown state rather than a guessed result. This controls
+authorization requests, **not** the start/stop state of an existing OCPP
+transaction. It should not be used as a stop-charging safety control.
+
 ## Installation
 
 Copy `custom_components/elli_charger_2` into your Home Assistant `custom_components` directory, or install the repository as a custom integration through HACS.
