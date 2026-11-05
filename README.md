@@ -54,10 +54,26 @@ internal API client through `async_put_charging_setting(setting, payload)`:
 | `ocpp_remote_start_enabled` | `/connection/ocpp/remote-start-charging-enabled` |
 
 These methods require authentication and an explicit JSON payload. The precise
-body schemas and hardware behavior are **not yet verified**; therefore they are
-not exposed as Home Assistant controls or invoked automatically. This avoids
-sending guessed charging commands. APK-discovered cloud endpoints are explicitly
-out of scope.
+body schemas are now derived from the bundled firmware's web UI serializers and
+compiled OpenAPI server models. Typed helpers are also available:
+
+| API client method | JSON body |
+| --- | --- |
+| `async_set_direct_authorization(True)` | `{"value":"allow"}` (`False` → `deny`) |
+| `async_set_free_charging(False)` | `{"enabled":false}` |
+| `async_set_user_limit_current(10)` | `{"value":10}` |
+| `async_set_user_limit_power(4000)` | `{"value":4000}` |
+| `async_set_charging_limits(11000.0, 16)` | `{"maxPower":11000.0,"maxCurrent":16}` |
+| `async_set_ocpp_remote_start_enabled(True)` | `{"enabled":true}` |
+
+The numerical values above are illustrative, not validated hardware limits.
+The firmware maps `maxPower` to a floating-point number and `maxCurrent` and the
+individual current/power limits to integers. **Units, effective bounds and
+actual device behavior still need live validation.** The API access rules allow
+`direct-authorization` and `charging/limits` PUT for standard and technician
+users; the other four PUTs require technician permissions. These methods are not
+yet exposed as Home Assistant controls or invoked automatically. APK-discovered
+cloud endpoints are explicitly out of scope.
 
 ## Installation
 

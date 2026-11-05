@@ -154,6 +154,37 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(session.requests), 2)
         self.assertTrue(all(call[2]['json'] == {'test': False} for call in session.requests))
 
+    async def test_firmware_typed_write_models(self):
+        session = Session()
+        api = API['ElliChargerApi'](session, 'wallbox', 'service', 'test-password')
+        cases = [
+            (api.async_set_direct_authorization(True), '/charging/direct-authorization', {'value': 'allow'}),
+            (api.async_set_free_charging(False), '/charging/free-charging', {'enabled': False}),
+            (api.async_set_user_limit_current(10), '/charging/user-limit-current', {'value': 10}),
+            (api.async_set_user_limit_power(4000), '/charging/user-limit-power', {'value': 4000}),
+            (api.async_set_charging_limits(11000.0, 16), '/charging/limits', {'maxPower': 11000.0, 'maxCurrent': 16}),
+            (api.async_set_ocpp_remote_start_enabled(True), '/connection/ocpp/remote-start-charging-enabled', {'enabled': True}),
+        ]
+        for request, path, body in cases:
+            await request
+            method, url, kwargs = session.requests[-1]
+            self.assertEqual((method, url), ('PUT', 'https://wallbox/api/v2' + path))
+            self.assertEqual(kwargs['json'], body)
+
+    async def test_firmware_typed_write_validation(self):
+        api = API['ElliChargerApi'](Session(), 'wallbox', 'service', 'test-password')
+        for request in (
+            lambda: api.async_set_direct_authorization('allow'),
+            lambda: api.async_set_free_charging(1),
+            lambda: api.async_set_user_limit_current(10.5),
+            lambda: api.async_set_user_limit_power(True),
+            lambda: api.async_set_charging_limits(float('nan'), 16),
+            lambda: api.async_set_charging_limits(11000, -1),
+            lambda: api.async_set_ocpp_remote_start_enabled('true'),
+        ):
+            with self.assertRaises(ValueError):
+                await request()
+
     async def test_forbidden_endpoint_does_not_relogin_or_break_public_data(self):
         session = Session()
         session.routes['/api/v2/connection/ocpp'] = (403, None)
