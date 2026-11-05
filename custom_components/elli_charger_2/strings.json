@@ -86,6 +86,9 @@
       },
       "vehicle_api_diagnostics": {
         "name": "Vehicle API diagnostics"
+      },
+      "charging_api_diagnostics": {
+        "name": "Charging API diagnostics"
       }
     },
     "binary_sensor": {

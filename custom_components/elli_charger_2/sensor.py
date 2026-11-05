@@ -184,6 +184,21 @@ SENSORS: tuple[ElliSensorDescription, ...] = (
         ) else None,
     ),
     ElliSensorDescription(
+        requires_auth=True,
+        key="charging_api_diagnostics",
+        translation_key="charging_api_diagnostics",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        icon="mdi:api",
+        value_fn=lambda d: "data_received" if any(
+            d.get(key) is not None for key in (
+                "charging_statistic", "charging_user_limit_current",
+                "charging_user_limit_power", "charging_direct_authorization",
+                "ocpp_remote_start_enabled",
+            )
+        ) else None,
+    ),
+    ElliSensorDescription(
         key="last_charging_start",
         translation_key="last_charging_start",
         device_class=SensorDeviceClass.TIMESTAMP,
@@ -342,6 +357,16 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return useful diagnostic attributes."""
+        if self.entity_description.key == "charging_api_diagnostics":
+            return {
+                key: self.coordinator.data.get(key)
+                for key in (
+                    "charging_statistic", "charging_user_limit_current",
+                    "charging_user_limit_power", "charging_direct_authorization",
+                    "ocpp_remote_start_enabled", "charging_limits", "restrictions",
+                    "free_charging",
+                )
+            }
         if self.entity_description.key == "vehicle_api_diagnostics":
             vehicle = self.coordinator.data.get("plugged_vehicle")
             session = self.coordinator.data.get("last_session")

@@ -103,6 +103,7 @@ class ElliChargerApi:
         *,
         auth: bool = False,
         retry_auth: bool = True,
+        json_body: Any = None,
     ) -> Any:
         if auth:
             if not self.authentication_enabled:
@@ -114,12 +115,15 @@ class ElliChargerApi:
         headers = {"Authorization": f"Bearer {self._token}"} if auth else {}
         request_token = self._token
         try:
+            request_options = {
+                "headers": headers,
+                "ssl": False,
+                "timeout": ClientTimeout(total=15),
+            }
+            if json_body is not None:
+                request_options["json"] = json_body
             async with self._session.request(
-                method,
-                f"{self._base_url}{path}",
-                headers=headers,
-                ssl=False,
-                timeout=ClientTimeout(total=15),
+                method, f"{self._base_url}{path}", **request_options
             ) as response:
                 if response.status == 401 and auth and retry_auth:
                     # Concurrent polls must share one renewed token. A 403 is a
@@ -128,7 +132,8 @@ class ElliChargerApi:
                         if self._token == request_token:
                             await self.async_login()
                     return await self._request(
-                        method, path, auth=True, retry_auth=False
+                        method, path, auth=True, retry_auth=False,
+                        json_body=json_body,
                     )
                 if response.status in (401, 403):
                     raise ElliChargerAuthenticationError("Authentication rejected")
@@ -144,6 +149,48 @@ class ElliChargerApi:
         except (ClientError, asyncio.TimeoutError, ValueError) as err:
             raise ElliChargerConnectionError(str(err)) from err
 
+    async def async_check_token(self) -> Any:
+        """Check the active local JWT (requires configured credentials)."""
+        return await self._request("GET", "/api/v2/jwt/check", auth=True)
+
+    async def async_logout(self) -> Any:
+        """End the local JWT session and discard the cached token."""
+        if not self._token:
+            return None
+        try:
+            return await self._request(
+                "POST", "/api/v2/jwt/logout", auth=True, retry_auth=False
+            )
+        finally:
+            self._token = None
+
+    async def async_get_charging_curve(self) -> Any:
+        """Fetch the charging curve as a REST snapshot (SSE remains preferred)."""
+        return await self._request("GET", "/api/v2/dashboard/charging-curve", auth=True)
+
+    async def async_put_charging_setting(self, setting: str, payload: Any) -> Any:
+        """Send a local firmware PUT with a caller-supplied, verified JSON body.
+
+        No assumptions are made about the firmware's body schema. This method is
+        intentionally not exposed as a Home Assistant action until those schemas
+        have been validated against the charger.
+        """
+        paths = {
+            "direct_authorization": "/api/v2/charging/direct-authorization",
+            "free_charging": "/api/v2/charging/free-charging",
+            "user_limit_current": "/api/v2/charging/user-limit-current",
+            "user_limit_power": "/api/v2/charging/user-limit-power",
+            "limits": "/api/v2/charging/limits",
+            "ocpp_remote_start_enabled": (
+                "/api/v2/connection/ocpp/remote-start-charging-enabled"
+            ),
+        }
+        if setting not in paths:
+            raise ValueError(f"Unsupported local charging setting: {setting}")
+        if payload is None:
+            raise ValueError("An explicit JSON payload is required")
+        return await self._request("PUT", paths[setting], auth=True, json_body=payload)
+
     async def async_get_data(self) -> dict[str, Any]:
         """Fetch the current state used by Home Assistant entities."""
         endpoints: dict[str, tuple[str, bool]] = {
@@ -151,6 +198,15 @@ class ElliChargerApi:
             "last_session": ("/api/v2/charging/last-started-session", False),
             "plugged_vehicle": ("/api/v2/vehicles/plugged", False),
             "lifetime_stats": ("/api/v2/charging/lifetime-stats", False),
+            # Additional read routes identified in Elli firmware. Their response
+            # schemas vary by firmware, so expose raw values in diagnostics first.
+            "charging_statistic": ("/api/v2/charging/statistic", True),
+            "charging_user_limit_current": ("/api/v2/charging/user-limit-current", True),
+            "charging_user_limit_power": ("/api/v2/charging/user-limit-power", True),
+            "charging_direct_authorization": ("/api/v2/charging/direct-authorization", True),
+            "ocpp_remote_start_enabled": (
+                "/api/v2/connection/ocpp/remote-start-charging-enabled", True
+            ),
             "energy_meter": ("/api/v2/system/energy-meter", False),
             "ethernet_connected": ("/api/v2/connection/ethernet/connected", True),
             "network_connected": ("/api/v2/connection/network/connected", True),
