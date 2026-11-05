@@ -103,6 +103,57 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(protected[2]['headers']['Authorization'], 'Bearer test-token-1')
             self.assertEqual(session.requests[0][2]['headers'], {})
 
+    async def test_local_put_routes_forward_explicit_payload(self):
+        endpoints = {
+            'direct_authorization': '/api/v2/charging/direct-authorization',
+            'free_charging': '/api/v2/charging/free-charging',
+            'user_limit_current': '/api/v2/charging/user-limit-current',
+            'user_limit_power': '/api/v2/charging/user-limit-power',
+            'limits': '/api/v2/charging/limits',
+            'ocpp_remote_start_enabled': '/api/v2/connection/ocpp/remote-start-charging-enabled',
+        }
+        session = Session()
+        api = API['ElliChargerApi'](session, 'wallbox', 'service', 'test-password')
+        for setting, path in endpoints.items():
+            body = {'testField': setting}
+            await api.async_put_charging_setting(setting, body)
+            method, url, kwargs = session.requests[-1]
+            self.assertEqual((method, url), ('PUT', 'https://wallbox' + path))
+            self.assertEqual(kwargs['json'], body)
+            self.assertEqual(kwargs['headers']['Authorization'], 'Bearer test-token-1')
+        with self.assertRaises(ValueError):
+            await api.async_put_charging_setting('unknown', {})
+        with self.assertRaises(ValueError):
+            await api.async_put_charging_setting('limits', None)
+
+    async def test_local_jwt_check_logout_and_curve(self):
+        session = Session()
+        api = API['ElliChargerApi'](session, 'wallbox', 'standard', 'test-password')
+        await api.async_check_token()
+        await api.async_get_charging_curve()
+        await api.async_logout()
+        self.assertEqual(
+            [(method, url.split('wallbox')[1]) for method, url, _ in session.requests],
+            [('GET', '/api/v2/jwt/check'),
+             ('GET', '/api/v2/dashboard/charging-curve'),
+             ('POST', '/api/v2/jwt/logout')],
+        )
+        self.assertIsNone(api._token)
+        self.assertIsNone(await api.async_logout())
+        self.assertEqual(len(session.requests), 3)
+
+    async def test_local_put_retries_with_same_payload_after_401(self):
+        session = Session()
+        session.routes['/api/v2/charging/free-charging'] = lambda kwargs: Response(
+            401 if kwargs['headers']['Authorization'] == 'Bearer expired' else 200,
+            {'ok': True},
+        )
+        api = API['ElliChargerApi'](session, 'wallbox', 'service', 'test-password')
+        api._token = 'expired'
+        await api.async_put_charging_setting('free_charging', {'test': False})
+        self.assertEqual(len(session.requests), 2)
+        self.assertTrue(all(call[2]['json'] == {'test': False} for call in session.requests))
+
     async def test_forbidden_endpoint_does_not_relogin_or_break_public_data(self):
         session = Session()
         session.routes['/api/v2/connection/ocpp'] = (403, None)
@@ -155,6 +206,26 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         data = await API['ElliChargerApi'](session, 'wallbox').async_get_data()
         self.assertIsNone(data['plugged_vehicle'])
         self.assertIsNone(data['lifetime_stats'])
+
+    async def test_firmware_read_routes_are_authenticated_and_optional(self):
+        session = Session()
+        session.routes['/api/v2/charging/statistic'] = (404, None)
+        api = API['ElliChargerApi'](session, 'wallbox', 'standard', 'synthetic-password')
+        data = await api.async_get_data()
+        endpoints = {
+            'charging_statistic': '/api/v2/charging/statistic',
+            'charging_user_limit_current': '/api/v2/charging/user-limit-current',
+            'charging_user_limit_power': '/api/v2/charging/user-limit-power',
+            'charging_direct_authorization': '/api/v2/charging/direct-authorization',
+            'ocpp_remote_start_enabled': '/api/v2/connection/ocpp/remote-start-charging-enabled',
+        }
+        self.assertIsNone(data['charging_statistic'])
+        for key, path in endpoints.items():
+            self.assertIn(key, data)
+            calls = [r for r in session.requests if r[1].endswith(path)]
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0][0], 'GET')
+            self.assertEqual(calls[0][2]['headers']['Authorization'], 'Bearer test-token-1')
 
 
 class Marker:

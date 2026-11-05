@@ -22,11 +22,42 @@ Authentication is optional. Leave the password empty to use public REST endpoint
 - Vehicle battery level (latest SoC reported by the last started session, when valid; may be stale)
 - Last charging start
 - Lifetime energy and charging time
+- Disabled-by-default charging API diagnostics for firmware-discovered charging
+  statistics, user current/power limits, direct authorization and OCPP remote-start
+  configuration (requires credentials; unsupported responses remain unknown)
 - Handles HTTP 204 as an empty/not-connected response
 
 With authentication, the previously disabled sensors are restored: maximum current, six device temperatures, relay state, active errors, Ethernet/network/WLAN/LTE connectivity, OCPP enabled/connected, phase switching enabled, free charging, and ground-monitoring/calibration-law/energy-saving capabilities. Protected OCPP configuration, LTE status, EEBUS pairing, charging restrictions, firmware/update information and device state are also fetched for diagnostics.
 
 These are monitoring entities; this integration does not write settings or issue charging commands. Protected entities are unavailable without credentials. Missing or forbidden protected data is unknown, never a fabricated zero or disconnected state. Individual unsupported or forbidden endpoints do not interrupt public data. Tokens stay in memory; diagnostic exports redact credentials, including integration options.
+
+## Local REST API coverage
+
+All requests target **only the configured wallbox host**, under `/api/v2/`.
+No Elli cloud, account, or app API endpoints are used.
+
+The client also supports JWT check (`GET /jwt/check`) and logout (`POST
+/jwt/logout`), plus an on-demand charging-curve snapshot (`GET
+/dashboard/charging-curve`). The regular integration continues to use SSE for
+live charging-curve updates.
+
+The following firmware-discovered local `PUT` routes are available in the
+internal API client through `async_put_charging_setting(setting, payload)`:
+
+| Setting | Local endpoint |
+| --- | --- |
+| `direct_authorization` | `/charging/direct-authorization` |
+| `free_charging` | `/charging/free-charging` |
+| `user_limit_current` | `/charging/user-limit-current` |
+| `user_limit_power` | `/charging/user-limit-power` |
+| `limits` | `/charging/limits` |
+| `ocpp_remote_start_enabled` | `/connection/ocpp/remote-start-charging-enabled` |
+
+These methods require authentication and an explicit JSON payload. The precise
+body schemas and hardware behavior are **not yet verified**; therefore they are
+not exposed as Home Assistant controls or invoked automatically. This avoids
+sending guessed charging commands. APK-discovered cloud endpoints are explicitly
+out of scope.
 
 ## Installation
 
