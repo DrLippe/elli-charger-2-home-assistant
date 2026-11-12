@@ -94,6 +94,15 @@
       },
       "charging_api_diagnostics": {
         "name": "Charging API diagnostics"
+      },
+      "last_completed_duration": {
+        "name": "Last session charging duration"
+      },
+      "last_completed_average_power": {
+        "name": "Last session average charging power"
+      },
+      "last_completed_max_power": {
+        "name": "Last session maximum observed charging power"
       }
     },
     "binary_sensor": {
