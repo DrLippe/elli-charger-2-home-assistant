@@ -31,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ElliChargerConfigEntry) 
         except ElliChargerConnectionError as err:
             raise ConfigEntryNotReady(str(err)) from err
 
-    coordinator = ElliChargerCoordinator(hass, api)
+    coordinator = ElliChargerCoordinator(hass, api, entry.entry_id)
     await coordinator.async_setup()
     await coordinator.async_config_entry_first_refresh()
 
