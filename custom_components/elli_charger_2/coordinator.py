@@ -80,7 +80,8 @@ class ElliChargerCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             rate = session.get("chargingRate")
             if type(rate) in (int, float) and isfinite(rate) and rate >= 0:
                 power = float(rate)
-        if power is None:
+        # Zero means idle/no usable peak; never treat it as a measured maximum.
+        if power is None or power <= 0:
             return
 
         previous = self._session_peaks.get(start)
