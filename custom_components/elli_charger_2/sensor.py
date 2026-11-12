@@ -125,6 +125,34 @@ def _charging_power(data: dict[str, Any]) -> float | None:
 
 SENSORS: tuple[ElliSensorDescription, ...] = (
     ElliSensorDescription(
+        key="last_completed_duration",
+        translation_key="last_completed_duration",
+        native_unit_of_measurement="min",
+        icon="mdi:timer-check",
+        value_fn=lambda d: round(
+            d["last_completed_metrics"]["duration_seconds"] / 60, 2
+        ) if isinstance(d.get("last_completed_metrics"), dict)
+        and d["last_completed_metrics"].get("duration_seconds") is not None else None,
+    ),
+    ElliSensorDescription(
+        key="last_completed_average_power",
+        translation_key="last_completed_average_power",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:flash-outline",
+        value_fn=lambda d: (d.get("last_completed_metrics") or {}).get("average_power_kw"),
+    ),
+    ElliSensorDescription(
+        key="last_completed_max_power",
+        translation_key="last_completed_max_power",
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:flash-triangle",
+        value_fn=lambda d: (d.get("last_completed_metrics") or {}).get("observed_max_power_kw"),
+    ),
+    ElliSensorDescription(
         key="last_charging_session",
         translation_key="last_charging_session",
         device_class=SensorDeviceClass.DATE,
@@ -357,6 +385,10 @@ class ElliSensor(ElliChargerEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return useful diagnostic attributes."""
+        if self.entity_description.key in {"last_completed_duration", "last_completed_average_power", "last_completed_max_power"}:
+            metrics = self.coordinator.data.get("last_completed_metrics")
+            return {"session_id": metrics.get("session_id"), "session_start": metrics.get("start"),
+                    "maximum_is_observed": self.entity_description.key == "last_completed_max_power"} if isinstance(metrics, dict) else None
         if self.entity_description.key == "charging_api_diagnostics":
             return {
                 key: self.coordinator.data.get(key)
