@@ -94,6 +94,15 @@
       },
       "charging_api_diagnostics": {
         "name": "Lade-API-Diagnose"
+      },
+      "last_completed_duration": {
+        "name": "Ladedauer letzte Ladesitzung"
+      },
+      "last_completed_average_power": {
+        "name": "Durchschnittliche Ladeleistung letzte Ladesitzung"
+      },
+      "last_completed_max_power": {
+        "name": "Maximale gemessene Ladeleistung letzte Ladesitzung"
       }
     },
     "binary_sensor": {
